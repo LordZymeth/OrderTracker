@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#E8703A">
+<title>Karinderya Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#FAF6F1;
+    --card:#FFFFFF;
+    --text:#2B2420;
+    --text-soft:#8C8078;
+    --border:#E8DFD5;
+    --accent:#E8703A;
+    --accent-dark:#C75A2C;
+    --accent-tint:#FCE6D8;
+    --success:#3F8F5F;
+    --success-tint:#DFF2E6;
+    --danger:#C24A3B;
+    --danger-tint:#FBE4E0;
+    --warn:#B9832A;
+    --warn-tint:#F7EAD2;
+    --shadow: 0 2px 10px rgba(43,36,32,0.06), 0 1px 2px rgba(43,36,32,0.08);
+    --radius: 16px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Roboto Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#1B1712;
+    --card:#26201A;
+    --text:#F3EBE2;
+    --text-soft:#A6998A;
+    --border:#3A3128;
+    --accent:#F0824B;
+    --accent-dark:#F0824B;
+    --accent-tint:#3A2A1E;
+    --success:#5FBF87;
+    --success-tint:#1E3226;
+    --danger:#E5786A;
+    --danger-tint:#3A2320;
+    --warn:#E3B15E;
+    --warn-tint:#3A2E17;
+    --shadow: 0 2px 10px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.3);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-tap-highlight-color:transparent;
+    min-height:100vh;
+    transition:background .2s ease, color .2s ease;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  input{font-family:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:var(--accent);
+    color:#fff;
+    padding:10px 14px 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+  .header-top{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-weight:800; font-size:17px; letter-spacing:.2px;
+  }
+  .brand .bowl{font-size:20px;}
+  .icon-btn{
+    background:rgba(255,255,255,0.18);
+    border:none; color:#fff;
+    width:38px; height:38px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .icon-btn:active{transform:scale(0.9); background:rgba(255,255,255,0.32);}
+  .header-icons{display:flex; gap:8px;}
+  .totals-row{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    background:rgba(0,0,0,0.14);
+    border-radius:14px;
+    padding:10px 14px;
+  }
+  .date-block .label{font-size:10.5px; opacity:.85; text-transform:uppercase; letter-spacing:.08em;}
+  .date-block .value{font-size:14px; font-weight:700; margin-top:2px;}
+  .total-block{text-align:right;}
+  .total-block .label{font-size:10.5px; opacity:.85; text-transform:uppercase; letter-spacing:.08em;}
+  .total-block .value{
+    font-family:var(--mono); font-weight:700;
+    font-size:26px; margin-top:2px; letter-spacing:.02em;
+  }
+
+  /* ---------- Layout ---------- */
+  main{padding:14px 14px 40px; max-width:720px; margin:0 auto;}
+
+  .action-row{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:8px; margin:14px 0 4px;
+  }
+  .action-btn{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:10px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-size:11px; font-weight:600; color:var(--text);
+    box-shadow:var(--shadow);
+    transition:transform .1s ease;
+    position:relative;
+  }
+  .action-btn:active{transform:scale(0.95);}
+  .action-btn .ic{font-size:19px;}
+  .action-btn.danger{color:var(--danger);}
+  .count-badge{
+    position:absolute; top:4px; right:10px;
+    background:var(--danger); color:#fff;
+    font-size:10px; font-weight:800; line-height:1;
+    min-width:16px; height:16px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; padding:0 4px;
+  }
+
+  .section-title{
+    font-size:13px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--text-soft); margin:22px 2px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title .count{
+    font-family:var(--mono); background:var(--accent-tint); color:var(--accent-dark);
+    padding:2px 8px; border-radius:10px; font-size:11px; letter-spacing:0; text-transform:none;
+  }
+
+  /* ---------- Menu panel ---------- */
+  .panel{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius); padding:14px; box-shadow:var(--shadow);
+    margin-bottom:16px;
+  }
+  .form-row{display:flex; gap:8px; margin-bottom:10px;}
+  .form-row input{
+    flex:1; min-width:0;
+    padding:12px 12px; border-radius:12px; border:1.5px solid var(--border);
+    background:var(--bg); color:var(--text); font-size:15px;
+  }
+  .form-row input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .price-input{max-width:110px;}
+  .btn-primary{
+    background:var(--accent); color:#fff; border:none;
+    border-radius:12px; padding:12px 16px; font-weight:700; font-size:15px;
+    width:100%;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .btn-primary:active{transform:scale(0.98); background:var(--accent-dark);}
+  .btn-primary:disabled{opacity:.45;}
+  .menu-list{list-style:none; margin:12px 0 0; padding:0; border-top:1px dashed var(--border);}
+  .menu-list li{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 2px; border-bottom:1px dashed var(--border); gap:8px;
+  }
+  .menu-list .mi-name{font-weight:600; font-size:14.5px;}
+  .menu-list .mi-price{font-family:var(--mono); color:var(--text-soft); font-size:13px; margin-left:6px;}
+  .menu-list .mi-actions{display:flex; gap:6px; flex-shrink:0;}
+  .mini-btn{
+    width:32px; height:32px; border-radius:9px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mini-btn.del{color:var(--danger);}
+  .empty-note{color:var(--text-soft); font-size:13.5px; padding:10px 2px;}
+  .btn-text-danger{
+    display:block; width:100%; text-align:center;
+    background:none; border:none; color:var(--danger);
+    font-size:13px; font-weight:700; padding:12px 4px 2px;
+  }
+
+  /* ---------- Editing banner ---------- */
+  .edit-banner{
+    display:none;
+    align-items:center; justify-content:space-between;
+    background:var(--warn-tint); color:var(--warn);
+    border-radius:12px; padding:10px 14px; margin-bottom:12px;
+    font-size:13.5px; font-weight:700;
+  }
+  .edit-banner.show{display:flex;}
+  .edit-banner button{
+    background:none; border:none; color:var(--warn); font-weight:800;
+    text-decoration:underline; font-size:13px;
+  }
+
+  /* ---------- Item cards (order builder) ---------- */
+  .cards{display:flex; flex-direction:column; gap:12px;}
+  .card{
+    position:relative;
+    background:var(--card); border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:14px 16px 14px;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:4px;
+    background:repeating-linear-gradient(90deg, var(--border) 0 8px, transparent 8px 14px);
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;}
+  .card-name{font-size:16.5px; font-weight:800;}
+  .card-price{font-family:var(--mono); font-size:12.5px; color:var(--text-soft); margin-top:3px;}
+  .card-subtotal{text-align:right;}
+  .card-subtotal .st-label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-soft);}
+  .card-subtotal .st-value{font-family:var(--mono); font-weight:800; font-size:17px; color:var(--success); margin-top:2px;}
+  .counter-row{display:flex; align-items:center; gap:14px;}
+  .qty-btn{
+    width:48px; height:48px; border-radius:14px; border:none;
+    font-size:22px; font-weight:800; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .08s ease;
+  }
+  .qty-btn:active{transform:scale(0.88);}
+  .qty-btn.plus{background:var(--accent);}
+  .qty-btn.minus{background:var(--text-soft);}
+  .qty-value{
+    flex:1; text-align:center; font-family:var(--mono);
+    font-size:24px; font-weight:800;
+  }
+
+  /* ---------- Draft/slip summary bar (sticky above builder) ---------- */
+  .draft-bar{
+    position:sticky; top:0; z-index:30;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:12px 14px; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .draft-bar.stuck-offset{top:calc(var(--header-stack, 0px));}
+  .draft-info .dl{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-soft);}
+  .draft-info .dv{font-family:var(--mono); font-weight:800; font-size:19px; color:var(--accent-dark);}
+  .draft-actions{display:flex; gap:8px;}
+  .btn-save-slip{
+    background:var(--accent); color:#fff; border:none; border-radius:12px;
+    padding:11px 16px; font-weight:700; font-size:13.5px;
+    white-space:nowrap;
+  }
+  .btn-save-slip:disabled{opacity:.4;}
+  .btn-clear-draft{
+    background:transparent; border:1.5px solid var(--border); color:var(--text-soft);
+    border-radius:12px; padding:11px 12px; font-weight:700; font-size:13px;
+  }
+
+  /* ---------- Order slip cards (open / paid) ---------- */
+  .slip{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:14px 16px; margin-bottom:12px;
+  }
+  .slip-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .slip-label{font-weight:800; font-size:15px;}
+  .slip-time{font-size:11.5px; color:var(--text-soft); margin-top:1px;}
+  .slip-total{font-family:var(--mono); font-weight:800; font-size:17px; color:var(--accent-dark);}
+  .slip.paid .slip-total{color:var(--success);}
+  .slip-items{list-style:none; margin:0 0 12px; padding:0; border-top:1px dashed var(--border);}
+  .slip-items li{
+    display:flex; justify-content:space-between; padding:6px 0;
+    font-size:13.5px; border-bottom:1px dashed var(--border);
+  }
+  .slip-items li .sn{color:var(--text);}
+  .slip-items li .sq{color:var(--text-soft); font-family:var(--mono); font-size:12.5px;}
+  .slip-actions{display:flex; gap:8px;}
+  .btn-paid{
+    flex:1.3; background:var(--success); color:#fff; border:none;
+    border-radius:12px; padding:11px; font-weight:800; font-size:14px;
+  }
+  .btn-slip-edit{
+    flex:1; background:transparent; border:1.5px solid var(--border); color:var(--text);
+    border-radius:12px; padding:11px; font-weight:700; font-size:13.5px;
+  }
+  .btn-slip-cancel{
+    flex:1; background:transparent; border:1.5px solid var(--danger); color:var(--danger);
+    border-radius:12px; padding:11px; font-weight:700; font-size:13.5px;
+  }
+  .paid-badge{
+    display:inline-flex; align-items:center; gap:4px;
+    background:var(--success-tint); color:var(--success);
+    font-size:11px; font-weight:800; padding:3px 9px; border-radius:20px;
+  }
+
+  /* ---------- Masterlist ---------- */
+  .masterlist{list-style:none; margin:0; padding:0;}
+  .masterlist li{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 2px; border-bottom:1px dashed var(--border); gap:8px;
+  }
+  .masterlist li:last-child{border-bottom:none;}
+  .ml-left{display:flex; align-items:center; gap:8px; min-width:0;}
+  .ml-name{font-weight:700; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ml-qty{
+    font-family:var(--mono); background:var(--accent-tint); color:var(--accent-dark);
+    font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:10px; flex-shrink:0;
+  }
+  .ml-sub{font-family:var(--mono); font-weight:800; color:var(--success); font-size:14px; flex-shrink:0;}
+  .masterlist-total{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 2px 2px; margin-top:8px; border-top:2px solid var(--border);
+    font-weight:800; font-size:15px;
+  }
+  .masterlist-total .mt-value{font-family:var(--mono); color:var(--success);}
+
+  details.paid-collapse{margin-top:4px;}
+  details.paid-collapse summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    font-weight:700; font-size:13.5px; box-shadow:var(--shadow);
+  }
+  details.paid-collapse summary::-webkit-details-marker{display:none;}
+  details.paid-collapse summary .chev{transition:transform .15s ease; color:var(--text-soft);}
+  details.paid-collapse[open] summary .chev{transform:rotate(180deg);}
+  details.paid-collapse .paid-body{padding-top:10px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,15,10,0.5);
+    display:none; align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--card); width:100%; max-width:480px;
+    border-radius:20px 20px 0 0; padding:20px; max-height:82vh; overflow-y:auto;
+    animation:slideup .18s ease-out;
+  }
+  @keyframes slideup{from{transform:translateY(20px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  .sheet h3{margin:0 0 6px; font-size:18px; font-weight:800;}
+  .sheet p{color:var(--text-soft); font-size:14px; margin:0 0 16px; line-height:1.5;}
+  .sheet-actions{display:flex; gap:10px; margin-top:16px;}
+  .btn-outline{
+    flex:1; background:transparent; border:1.5px solid var(--border); color:var(--text);
+    padding:12px; border-radius:12px; font-weight:700; font-size:14.5px;
+  }
+  .btn-danger{
+    flex:1; background:var(--danger); border:none; color:#fff;
+    padding:12px; border-radius:12px; font-weight:700; font-size:14.5px;
+  }
+  .history-item{
+    border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px;
+  }
+  .history-item .hh{display:flex; justify-content:space-between; font-weight:700; margin-bottom:6px;}
+  .history-item .hh .amt{font-family:var(--mono); color:var(--success);}
+  .history-item .hd{font-size:12.5px; color:var(--text-soft); display:flex; justify-content:space-between; padding:2px 0;}
+  .no-history{color:var(--text-soft); font-size:14px; text-align:center; padding:30px 10px;}
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:var(--bg); padding:10px 18px; border-radius:30px;
+    font-size:13.5px; font-weight:600; opacity:0; transition:all .25s ease; z-index:200; pointer-events:none;
+    white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (min-width:640px){
+    .cards{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+    .action-row{grid-template-columns:repeat(4,140px); justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand"><span class="bowl">🍲</span> Karinderya Tracker</div>
+    <div class="header-icons">
+      <button class="icon-btn" id="themeBtn" title="Toggle dark mode">🌙</button>
+    </div>
+  </div>
+  <div class="totals-row">
+    <div class="date-block">
+      <div class="label">Today</div>
+      <div class="value" id="todayDate">—</div>
+    </div>
+    <div class="total-block">
+      <div class="label">Total sales today (paid)</div>
+      <div class="value" id="headerTotal">₱0</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="action-row">
+    <button class="action-btn" id="btnMenuToggle"><span class="ic">📋</span>Menu</button>
+    <button class="action-btn" id="btnHistory"><span class="ic">🕘</span>History</button>
+    <button class="action-btn" id="btnExport"><span class="ic">⬇️</span>Export</button>
+    <button class="action-btn danger" id="btnReset"><span class="ic">🔄</span>New Day</button>
+  </div>
+
+  <div class="panel" id="menuPanel" style="display:none; margin-top:14px;">
+    <div class="form-row">
+      <input type="text" id="itemName" placeholder="Item name (e.g. Adobo)" maxlength="30">
+      <input type="number" id="itemPrice" class="price-input" placeholder="₱ Price" min="0" step="0.5" inputmode="decimal">
+    </div>
+    <button class="btn-primary" id="btnAddItem">+ Add Item</button>
+    <ul class="menu-list" id="menuList"></ul>
+    <button class="btn-text-danger" id="btnClearMenu">🗑️ Clear entire menu</button>
+  </div>
+
+  <div class="section-title">Build Order Slip</div>
+
+  <div class="edit-banner" id="editBanner">
+    <span id="editBannerText">Editing Order</span>
+    <button id="cancelEditBtn">Cancel edit</button>
+  </div>
+
+  <div class="draft-bar">
+    <div class="draft-info">
+      <div class="dl">Current order total</div>
+      <div class="dv" id="draftTotal">₱0</div>
+    </div>
+    <div class="draft-actions">
+      <button class="btn-clear-draft" id="btnClearDraft">Clear</button>
+      <button class="btn-save-slip" id="btnSaveSlip" disabled>Save Slip</button>
+    </div>
+  </div>
+
+  <div id="cardsWrap"></div>
+
+  <div class="section-title">
+    Open Order Slips
+    <span class="count" id="openCount">0</span>
+  </div>
+  <div id="openSlipsWrap"></div>
+
+  <div class="section-title">
+    Today's Masterlist
+    <span class="count" id="masterlistCount">0 sold</span>
+  </div>
+  <div class="panel" id="masterlistWrap"></div>
+
+  <details class="paid-collapse" id="paidDetails">
+    <summary>
+      <span>Paid Orders Today (<span id="paidCount">0</span>)</span>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="paid-body" id="paidSlipsWrap"></div>
+  </details>
+
+</main>
+
+<!-- Confirm reset modal -->
+<div class="overlay" id="resetOverlay">
+  <div class="sheet">
+    <h3>Start a new day?</h3>
+    <p id="resetWarningText">This saves today's total to your sales history and clears paid orders and item counts. Your menu list stays the same.</p>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelReset">Cancel</button>
+      <button class="btn-danger" id="confirmReset">Start New Day</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete item confirm modal -->
+<div class="overlay" id="deleteOverlay">
+  <div class="sheet">
+    <h3>Remove this item?</h3>
+    <p id="deleteItemName">This item will be removed from today's menu.</p>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelDelete">Cancel</button>
+      <button class="btn-danger" id="confirmDelete">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel slip confirm modal -->
+<div class="overlay" id="cancelSlipOverlay">
+  <div class="sheet">
+    <h3>Cancel this order slip?</h3>
+    <p id="cancelSlipText">This order will be removed and will not count toward sales.</p>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="backSlipCancel">Keep it</button>
+      <button class="btn-danger" id="confirmSlipCancel">Cancel Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- History modal -->
+<div class="overlay" id="historyOverlay">
+  <div class="sheet">
+    <h3>Sales History</h3>
+    <p>Totals saved each time you start a new day.</p>
+    <div id="historyList"></div>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="closeHistory">Close</button>
+      <button class="btn-danger" id="btnClearHistory">Clear History</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm clear history modal -->
+<div class="overlay" id="clearHistoryOverlay">
+  <div class="sheet">
+    <h3>Clear all sales history?</h3>
+    <p>This permanently deletes every saved day's total and item breakdown. This cannot be undone.</p>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelClearHistory">Cancel</button>
+      <button class="btn-danger" id="confirmClearHistory">Clear History</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm clear menu modal -->
+<div class="overlay" id="clearMenuOverlay">
+  <div class="sheet">
+    <h3>Clear the entire menu?</h3>
+    <p>This removes every item from today's menu so you can start fresh. Today's paid orders, open slips, and masterlist are not affected.</p>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelClearMenu">Cancel</button>
+      <button class="btn-danger" id="confirmClearMenu">Clear Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const LS_MENU = "kt_menu";
+  const LS_DRAFT = "kt_draft";
+  const LS_OPEN = "kt_openslips";
+  const LS_PAID = "kt_paidorders";
+  const LS_COUNTER = "kt_slipcounter";
+  const LS_HISTORY = "kt_history";
+  const LS_THEME = "kt_theme";
+
+  let menu = JSON.parse(localStorage.getItem(LS_MENU) || "null") || [
+    { id: cryptoId(), name: "Adobo", price: 70 },
+    { id: cryptoId(), name: "Sisig", price: 80 },
+    { id: cryptoId(), name: "Gulay na Langka", price: 50 },
+    { id: cryptoId(), name: "Fried Fish", price: 65 }
+  ];
+  let draft = JSON.parse(localStorage.getItem(LS_DRAFT) || "{}");
+  let openSlips = JSON.parse(localStorage.getItem(LS_OPEN) || "[]");
+  let paidOrders = JSON.parse(localStorage.getItem(LS_PAID) || "[]");
+  let slipCounter = parseInt(localStorage.getItem(LS_COUNTER) || "0", 10);
+  let history = JSON.parse(localStorage.getItem(LS_HISTORY) || "[]");
+
+  let editingId = null;      // menu item being edited
+  let editingSlipId = null;  // open slip being edited via the draft builder
+  let pendingDeleteId = null;
+  let pendingCancelSlipId = null;
+
+  function cryptoId(){
+    return "id" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+
+  function save(){
+    localStorage.setItem(LS_MENU, JSON.stringify(menu));
+    localStorage.setItem(LS_DRAFT, JSON.stringify(draft));
+    localStorage.setItem(LS_OPEN, JSON.stringify(openSlips));
+    localStorage.setItem(LS_PAID, JSON.stringify(paidOrders));
+    localStorage.setItem(LS_COUNTER, String(slipCounter));
+    localStorage.setItem(LS_HISTORY, JSON.stringify(history));
+  }
+
+  function peso(n){
+    return "₱" + Number(n).toLocaleString("en-PH", {minimumFractionDigits: n % 1 === 0 ? 0 : 2, maximumFractionDigits:2});
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  // ---------- Draft (order builder) ----------
+  function draftTotal(){
+    return menu.reduce((sum, item) => sum + (draft[item.id] || 0) * item.price, 0);
+  }
+  function draftCount(){
+    return menu.reduce((sum, item) => sum + (draft[item.id] || 0), 0);
+  }
+  function draftItemsList(){
+    return menu
+      .filter(item => (draft[item.id] || 0) > 0)
+      .map(item => ({ itemId: item.id, name: item.name, price: item.price, qty: draft[item.id] }));
+  }
+
+  // ---------- Paid totals ----------
+  function paidGrandTotal(){
+    return paidOrders.reduce((s, o) => s + o.total, 0);
+  }
+
+  // Aggregates every paid order's items into per-item totals (name, price, qty, subtotal).
+  // Grouped by item name so items sold before being edited/removed from the menu still count.
+  function aggregatePaidItems(){
+    const agg = {};
+    paidOrders.forEach(order => {
+      order.items.forEach(it => {
+        if (!agg[it.name]) agg[it.name] = { name: it.name, price: it.price, qty: 0, subtotal: 0 };
+        agg[it.name].qty += it.qty;
+        agg[it.name].subtotal += it.qty * it.price;
+      });
+    });
+    return agg;
+  }
+
+  // Same aggregation, but ordered to match the current menu order (unlisted/removed items appended last).
+  function masterlistRows(){
+    const agg = aggregatePaidItems();
+    const rows = Object.values(agg);
+    const menuOrder = menu.map(m => m.name);
+    rows.sort((a, b) => {
+      const ai = menuOrder.indexOf(a.name);
+      const bi = menuOrder.indexOf(b.name);
+      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    return rows;
+  }
+
+  function renderTotals(){
+    document.getElementById("headerTotal").textContent = peso(paidGrandTotal());
+    document.getElementById("draftTotal").textContent = peso(draftTotal());
+    document.getElementById("btnSaveSlip").disabled = draftCount() === 0;
+  }
+
+  function renderDate(){
+    const d = new Date();
+    const opts = { weekday: "short", month: "short", day: "numeric" };
+    document.getElementById("todayDate").textContent = d.toLocaleDateString("en-PH", opts);
+  }
+
+  function renderMenuList(){
+    const list = document.getElementById("menuList");
+    if (menu.length === 0){
+      list.innerHTML = '<div class="empty-note">No items yet. Add your first ulam above.</div>';
+      return;
+    }
+    list.innerHTML = menu.map(item => `
+      <li>
+        <div>
+          <span class="mi-name">${escapeHtml(item.name)}</span>
+          <span class="mi-price">${peso(item.price)}</span>
+        </div>
+        <div class="mi-actions">
+          <button class="mini-btn" data-edit="${item.id}" title="Edit">✏️</button>
+          <button class="mini-btn del" data-del="${item.id}" title="Remove">🗑️</button>
+        </div>
+      </li>
+    `).join("");
+  }
+
+  function renderCards(){
+    const wrap = document.getElementById("cardsWrap");
+    if (menu.length === 0){
+      wrap.innerHTML = '<div class="panel" style="text-align:center; color:var(--text-soft);">No items on today\'s menu yet.<br>Tap <b>Menu</b> above to add your first ulam.</div>';
+      return;
+    }
+    wrap.innerHTML = `<div class="cards">` + menu.map(item => {
+      const q = draft[item.id] || 0;
+      const subtotal = q * item.price;
+      return `
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="card-name">${escapeHtml(item.name)}</div>
+              <div class="card-price">${peso(item.price)} / serving</div>
+            </div>
+            <div class="card-subtotal">
+              <div class="st-label">Subtotal</div>
+              <div class="st-value">${peso(subtotal)}</div>
+            </div>
+          </div>
+          <div class="counter-row">
+            <button class="qty-btn minus" data-minus="${item.id}" aria-label="Decrease">−</button>
+            <div class="qty-value">${q}</div>
+            <button class="qty-btn plus" data-plus="${item.id}" aria-label="Increase">+</button>
+          </div>
+        </div>
+      `;
+    }).join("") + `</div>`;
+  }
+
+  function slipItemsSummary(items){
+    if (!items.length) return "No items";
+    return items.map(it => `${it.qty}× ${it.name}`).join(", ");
+  }
+
+  function renderOpenSlips(){
+    const wrap = document.getElementById("openSlipsWrap");
+    document.getElementById("openCount").textContent = openSlips.length;
+    if (openSlips.length === 0){
+      wrap.innerHTML = '<div class="panel" style="text-align:center; color:var(--text-soft);">No open orders. Build one above and tap <b>Save Slip</b>.</div>';
+      return;
+    }
+    wrap.innerHTML = openSlips.map(slip => `
+      <div class="slip">
+        <div class="slip-head">
+          <div>
+            <div class="slip-label">Order #${slip.number}</div>
+            <div class="slip-time">${formatTime(slip.createdAt)}</div>
+          </div>
+          <div class="slip-total">${peso(slip.total)}</div>
+        </div>
+        <ul class="slip-items">
+          ${slip.items.map(it => `<li><span class="sn">${escapeHtml(it.name)}</span><span class="sq">${it.qty} × ${peso(it.price)}</span></li>`).join("")}
+        </ul>
+        <div class="slip-actions">
+          <button class="btn-slip-edit" data-slip-edit="${slip.id}">✏️ Edit</button>
+          <button class="btn-paid" data-slip-paid="${slip.id}">✓ Paid</button>
+        </div>
+        <div class="slip-actions" style="margin-top:8px;">
+          <button class="btn-slip-cancel" data-slip-cancel="${slip.id}" style="flex:1;">Cancel Order</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderPaidSlips(){
+    const wrap = document.getElementById("paidSlipsWrap");
+    document.getElementById("paidCount").textContent = paidOrders.length;
+    if (paidOrders.length === 0){
+      wrap.innerHTML = '<div class="empty-note">No paid orders yet today.</div>';
+      return;
+    }
+    wrap.innerHTML = paidOrders.slice().reverse().map(order => `
+      <div class="slip paid">
+        <div class="slip-head">
+          <div>
+            <div class="slip-label">Order #${order.number} <span class="paid-badge">✓ Paid</span></div>
+            <div class="slip-time">${formatTime(order.paidAt)}</div>
+          </div>
+          <div class="slip-total">${peso(order.total)}</div>
+        </div>
+        <ul class="slip-items">
+          ${order.items.map(it => `<li><span class="sn">${escapeHtml(it.name)}</span><span class="sq">${it.qty} × ${peso(it.price)}</span></li>`).join("")}
+        </ul>
+      </div>
+    `).join("");
+  }
+
+  function formatTime(iso){
+    return new Date(iso).toLocaleTimeString("en-PH", { hour:"2-digit", minute:"2-digit" });
+  }
+
+  function renderMasterlist(){
+    const wrap = document.getElementById("masterlistWrap");
+    const rows = masterlistRows();
+    const totalQty = rows.reduce((s, r) => s + r.qty, 0);
+    document.getElementById("masterlistCount").textContent = totalQty + " sold";
+
+    if (rows.length === 0){
+      wrap.innerHTML = '<div class="empty-note">Nothing sold yet today. This list fills in as order slips get marked Paid.</div>';
+      return;
+    }
+    const totalSales = rows.reduce((s, r) => s + r.subtotal, 0);
+    wrap.innerHTML = `
+      <ul class="masterlist">
+        ${rows.map(r => `
+          <li>
+            <div class="ml-left">
+              <span class="ml-name">${escapeHtml(r.name)}</span>
+              <span class="ml-qty">× ${r.qty}</span>
+            </div>
+            <span class="ml-sub">${peso(r.subtotal)}</span>
+          </li>
+        `).join("")}
+      </ul>
+      <div class="masterlist-total">
+        <span>Total sold today</span>
+        <span class="mt-value">${peso(totalSales)}</span>
+      </div>
+    `;
+  }
+
+  function renderAll(){
+    renderMenuList();
+    renderCards();
+    renderOpenSlips();
+    renderPaidSlips();
+    renderMasterlist();
+    renderTotals();
+    renderDate();
+  }
+
+  function toast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 2000);
+  }
+
+  // ---------- Menu panel toggle ----------
+  const menuPanel = document.getElementById("menuPanel");
+  document.getElementById("btnMenuToggle").addEventListener("click", () => {
+    menuPanel.style.display = menuPanel.style.display === "none" ? "block" : "none";
+  });
+
+  // ---------- Add / edit menu item ----------
+  const nameInput = document.getElementById("itemName");
+  const priceInput = document.getElementById("itemPrice");
+  const addBtn = document.getElementById("btnAddItem");
+
+  addBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    const price = parseFloat(priceInput.value);
+    if (!name){ toast("Enter an item name"); nameInput.focus(); return; }
+    if (isNaN(price) || price < 0){ toast("Enter a valid price"); priceInput.focus(); return; }
+
+    if (editingId){
+      const item = menu.find(m => m.id === editingId);
+      if (item){ item.name = name; item.price = price; }
+      editingId = null;
+      addBtn.textContent = "+ Add Item";
+    } else {
+      const id = cryptoId();
+      menu.push({ id, name, price });
+      draft[id] = 0;
+    }
+    nameInput.value = ""; priceInput.value = "";
+    save(); renderAll();
+    nameInput.focus();
+  });
+
+  document.getElementById("menuList").addEventListener("click", (e) => {
+    const editId = e.target.closest("[data-edit]")?.dataset.edit;
+    const delId = e.target.closest("[data-del]")?.dataset.del;
+    if (editId){
+      const item = menu.find(m => m.id === editId);
+      if (!item) return;
+      nameInput.value = item.name;
+      priceInput.value = item.price;
+      editingId = editId;
+      addBtn.textContent = "✓ Save Changes";
+      nameInput.focus();
+    }
+    if (delId){
+      pendingDeleteId = delId;
+      const item = menu.find(m => m.id === delId);
+      document.getElementById("deleteItemName").textContent = `"${item ? item.name : "This item"}" will be removed from today's menu.`;
+      document.getElementById("deleteOverlay").classList.add("show");
+    }
+  });
+
+  document.getElementById("cancelDelete").addEventListener("click", () => {
+    document.getElementById("deleteOverlay").classList.remove("show");
+    pendingDeleteId = null;
+  });
+  document.getElementById("confirmDelete").addEventListener("click", () => {
+    if (pendingDeleteId){
+      menu = menu.filter(m => m.id !== pendingDeleteId);
+      delete draft[pendingDeleteId];
+      if (editingId === pendingDeleteId){
+        editingId = null; nameInput.value=""; priceInput.value=""; addBtn.textContent = "+ Add Item";
+      }
+      save(); renderAll();
+      toast("Item removed");
+    }
+    document.getElementById("deleteOverlay").classList.remove("show");
+    pendingDeleteId = null;
+  });
+
+  // ---------- Clear entire menu ----------
+  document.getElementById("btnClearMenu").addEventListener("click", () => {
+    if (menu.length === 0){ toast("Menu is already empty"); return; }
+    document.getElementById("clearMenuOverlay").classList.add("show");
+  });
+  document.getElementById("cancelClearMenu").addEventListener("click", () => {
+    document.getElementById("clearMenuOverlay").classList.remove("show");
+  });
+  document.getElementById("confirmClearMenu").addEventListener("click", () => {
+    menu = [];
+    draft = {};
+    editingId = null;
+    nameInput.value = ""; priceInput.value = ""; addBtn.textContent = "+ Add Item";
+    save(); renderAll();
+    document.getElementById("clearMenuOverlay").classList.remove("show");
+    toast("Menu cleared");
+  });
+
+  // ---------- Draft counter buttons ----------
+  document.getElementById("cardsWrap").addEventListener("click", (e) => {
+    const plusId = e.target.closest("[data-plus]")?.dataset.plus;
+    const minusId = e.target.closest("[data-minus]")?.dataset.minus;
+    if (plusId){
+      draft[plusId] = (draft[plusId] || 0) + 1;
+      save(); renderCards(); renderTotals();
+    }
+    if (minusId){
+      draft[minusId] = Math.max(0, (draft[minusId] || 0) - 1);
+      save(); renderCards(); renderTotals();
+    }
+  });
+
+  function resetDraft(){
+    menu.forEach(item => draft[item.id] = 0);
+  }
+
+  document.getElementById("btnClearDraft").addEventListener("click", () => {
+    resetDraft();
+    exitEditMode();
+    save(); renderCards(); renderTotals();
+  });
+
+  function exitEditMode(){
+    editingSlipId = null;
+    document.getElementById("editBanner").classList.remove("show");
+    document.getElementById("btnSaveSlip").textContent = "Save Slip";
+  }
+
+  document.getElementById("cancelEditBtn").addEventListener("click", () => {
+    resetDraft();
+    exitEditMode();
+    save(); renderCards(); renderTotals();
+    toast("Edit cancelled");
+  });
+
+  // ---------- Save / update order slip ----------
+  document.getElementById("btnSaveSlip").addEventListener("click", () => {
+    const items = draftItemsList();
+    if (items.length === 0){ toast("Add at least one item first"); return; }
+    const total = draftTotal();
+
+    if (editingSlipId){
+      const slip = openSlips.find(s => s.id === editingSlipId);
+      if (slip){
+        slip.items = items;
+        slip.total = total;
+      }
+      toast(`Order #${slip ? slip.number : ""} updated`);
+      exitEditMode();
+    } else {
+      slipCounter += 1;
+      openSlips.push({
+        id: cryptoId(),
+        number: slipCounter,
+        items,
+        total,
+        createdAt: new Date().toISOString()
+      });
+      toast(`Order #${slipCounter} saved`);
+    }
+    resetDraft();
+    save(); renderCards(); renderOpenSlips(); renderTotals();
+  });
+
+  // ---------- Open slip actions: edit / paid / cancel ----------
+  document.getElementById("openSlipsWrap").addEventListener("click", (e) => {
+    const editSlipId = e.target.closest("[data-slip-edit]")?.dataset.slipEdit;
+    const paidSlipId = e.target.closest("[data-slip-paid]")?.dataset.slipPaid;
+    const cancelSlipId = e.target.closest("[data-slip-cancel]")?.dataset.slipCancel;
+
+    if (editSlipId){
+      const slip = openSlips.find(s => s.id === editSlipId);
+      if (!slip) return;
+      resetDraft();
+      slip.items.forEach(it => { draft[it.itemId] = it.qty; });
+      editingSlipId = slip.id;
+      document.getElementById("editBanner").classList.add("show");
+      document.getElementById("editBannerText").textContent = `Editing Order #${slip.number}`;
+      document.getElementById("btnSaveSlip").textContent = "✓ Update Slip";
+      save(); renderCards(); renderTotals();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    if (paidSlipId){
+      const idx = openSlips.findIndex(s => s.id === paidSlipId);
+      if (idx === -1) return;
+      const slip = openSlips[idx];
+      openSlips.splice(idx, 1);
+      paidOrders.push({
+        id: slip.id,
+        number: slip.number,
+        items: slip.items,
+        total: slip.total,
+        paidAt: new Date().toISOString()
+      });
+      if (editingSlipId === paidSlipId){ resetDraft(); exitEditMode(); }
+      save(); renderOpenSlips(); renderPaidSlips(); renderMasterlist(); renderTotals(); renderCards();
+      toast(`Order #${slip.number} marked paid ✓`);
+    }
+
+    if (cancelSlipId){
+      pendingCancelSlipId = cancelSlipId;
+      const slip = openSlips.find(s => s.id === cancelSlipId);
+      document.getElementById("cancelSlipText").textContent =
+        `Order #${slip ? slip.number : ""} (${slip ? slipItemsSummary(slip.items) : ""}) will be removed and will not count toward sales.`;
+      document.getElementById("cancelSlipOverlay").classList.add("show");
+    }
+  });
+
+  document.getElementById("backSlipCancel").addEventListener("click", () => {
+    document.getElementById("cancelSlipOverlay").classList.remove("show");
+    pendingCancelSlipId = null;
+  });
+  document.getElementById("confirmSlipCancel").addEventListener("click", () => {
+    if (pendingCancelSlipId){
+      const slip = openSlips.find(s => s.id === pendingCancelSlipId);
+      openSlips = openSlips.filter(s => s.id !== pendingCancelSlipId);
+      if (editingSlipId === pendingCancelSlipId){ resetDraft(); exitEditMode(); }
+      save(); renderOpenSlips(); renderTotals(); renderCards();
+      toast(`Order #${slip ? slip.number : ""} cancelled`);
+    }
+    document.getElementById("cancelSlipOverlay").classList.remove("show");
+    pendingCancelSlipId = null;
+  });
+
+  // ---------- Reset day ----------
+  document.getElementById("btnReset").addEventListener("click", () => {
+    const warnEl = document.getElementById("resetWarningText");
+    if (openSlips.length > 0){
+      warnEl.textContent = `You have ${openSlips.length} unpaid order slip(s) that will be discarded. Paid orders will be saved to history and today's counts will be cleared. Your menu stays the same.`;
+    } else {
+      warnEl.textContent = "This saves today's total to your sales history and clears paid orders. Your menu list stays the same.";
+    }
+    document.getElementById("resetOverlay").classList.add("show");
+  });
+  document.getElementById("cancelReset").addEventListener("click", () => {
+    document.getElementById("resetOverlay").classList.remove("show");
+  });
+  document.getElementById("confirmReset").addEventListener("click", () => {
+    const total = paidGrandTotal();
+    const agg = aggregatePaidItems();
+    history.unshift({
+      date: new Date().toISOString(),
+      total,
+      items: Object.values(agg)
+    });
+    if (history.length > 90) history = history.slice(0, 90);
+
+    openSlips = [];
+    paidOrders = [];
+    slipCounter = 0;
+    resetDraft();
+    exitEditMode();
+    save(); renderAll();
+    document.getElementById("resetOverlay").classList.remove("show");
+    toast("New day started — sales saved to history");
+  });
+
+  // ---------- History ----------
+  function formatHistoryDate(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-PH", { weekday:"short", month:"short", day:"numeric", year:"numeric" }) +
+           " · " + d.toLocaleTimeString("en-PH", { hour:"2-digit", minute:"2-digit" });
+  }
+  function renderHistory(){
+    const wrap = document.getElementById("historyList");
+    if (history.length === 0){
+      wrap.innerHTML = '<div class="no-history">No past days saved yet.<br>Tap "New Day" after a shift to save today\'s total here.</div>';
+      return;
+    }
+    wrap.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="hh"><span>${formatHistoryDate(h.date)}</span><span class="amt">${peso(h.total)}</span></div>
+        ${h.items.map(it => `<div class="hd"><span>${escapeHtml(it.name)} × ${it.qty}</span><span>${peso(it.subtotal)}</span></div>`).join("") || '<div class="hd"><span>No sales recorded</span></div>'}
+      </div>
+    `).join("");
+  }
+  document.getElementById("btnHistory").addEventListener("click", () => {
+    renderHistory();
+    document.getElementById("historyOverlay").classList.add("show");
+  });
+  document.getElementById("closeHistory").addEventListener("click", () => {
+    document.getElementById("historyOverlay").classList.remove("show");
+  });
+
+  document.getElementById("btnClearHistory").addEventListener("click", () => {
+    if (history.length === 0){ toast("History is already empty"); return; }
+    document.getElementById("clearHistoryOverlay").classList.add("show");
+  });
+  document.getElementById("cancelClearHistory").addEventListener("click", () => {
+    document.getElementById("clearHistoryOverlay").classList.remove("show");
+  });
+  document.getElementById("confirmClearHistory").addEventListener("click", () => {
+    history = [];
+    save(); renderHistory();
+    document.getElementById("clearHistoryOverlay").classList.remove("show");
+    document.getElementById("historyOverlay").classList.remove("show");
+    toast("Sales history cleared");
+  });
+
+  // ---------- Export ----------
+  document.getElementById("btnExport").addEventListener("click", () => {
+    const total = paidGrandTotal();
+    const now = new Date();
+    const agg = aggregatePaidItems();
+
+    let lines = [
+      "Karinderya Sales Summary",
+      "Date: " + now.toLocaleDateString("en-PH", { weekday:"long", year:"numeric", month:"long", day:"numeric" }),
+      "",
+      "Item, Price, Qty Sold, Subtotal"
+    ];
+    Object.values(agg).forEach(it => {
+      lines.push(`${it.name}, ${it.price.toFixed(2)}, ${it.qty}, ${it.subtotal.toFixed(2)}`);
+    });
+    lines.push("");
+    lines.push(`TOTAL SALES (PAID), , , ${total.toFixed(2)}`);
+    lines.push("");
+    lines.push("Order #, Time Paid, Items, Order Total");
+    paidOrders.forEach(o => {
+      lines.push(`${o.number}, ${formatTime(o.paidAt)}, "${slipItemsSummary(o.items)}", ${o.total.toFixed(2)}`);
+    });
+    if (openSlips.length){
+      lines.push("");
+      lines.push("Unpaid open orders (not included in total):");
+      openSlips.forEach(o => {
+        lines.push(`${o.number}, , "${slipItemsSummary(o.items)}", ${o.total.toFixed(2)}`);
+      });
+    }
+
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `karinderya-sales-${now.toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Summary downloaded");
+  });
+
+  // ---------- Dark mode ----------
+  const themeBtn = document.getElementById("themeBtn");
+  function applyTheme(t){
+    document.documentElement.setAttribute("data-theme", t);
+    themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+    localStorage.setItem(LS_THEME, t);
+  }
+  const savedTheme = localStorage.getItem(LS_THEME) ||
+    (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  applyTheme(savedTheme);
+  themeBtn.addEventListener("click", () => {
+    applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  // ---------- Init ----------
+  menu.forEach(item => { if (!(item.id in draft)) draft[item.id] = 0; });
+  save();
+  renderAll();
+
+  // ---------- Service worker (PWA) ----------
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
