@@ -352,6 +352,57 @@
   .history-item .hd{font-size:12.5px; color:var(--text-soft); display:flex; justify-content:space-between; padding:2px 0;}
   .no-history{color:var(--text-soft); font-size:14px; text-align:center; padding:30px 10px;}
 
+  .variant-options{display:flex; flex-direction:column; gap:10px;}
+  .variant-opt{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--bg); border:1.5px solid var(--border); border-radius:14px;
+    padding:16px 18px; font-weight:700; font-size:15.5px; color:var(--text);
+    transition:transform .1s ease, background .15s ease;
+  }
+  .variant-opt:active{transform:scale(0.97); background:var(--accent-tint);}
+  .variant-opt .vo-price{font-family:var(--mono); color:var(--accent-dark); font-weight:800;}
+  .variant-opt.remove .vo-price{color:var(--danger);}
+
+  .card-variant-line{font-size:12.5px; color:var(--text-soft); margin-top:4px;}
+  .card-variant-line b{color:var(--text); font-weight:700;}
+
+  .pay-total-row{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--accent-tint); border-radius:14px; padding:14px 16px; margin-bottom:16px;
+    font-weight:700; font-size:14px; color:var(--accent-dark);
+  }
+  .pay-total-value{font-family:var(--mono); font-size:22px; font-weight:800;}
+  .pay-label{
+    font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--text-soft); margin:14px 0 8px;
+  }
+  .bill-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .bill-btn{
+    background:var(--card); border:1.5px solid var(--border); color:var(--text);
+    border-radius:12px; padding:14px 4px; font-weight:800; font-size:15px;
+    font-family:var(--mono);
+    transition:transform .1s ease, background .15s ease, border-color .15s ease;
+  }
+  .bill-btn:active{transform:scale(0.94);}
+  .bill-btn.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .bill-exact-btn{
+    width:100%; margin-top:8px; background:transparent; border:1.5px dashed var(--border);
+    color:var(--text-soft); border-radius:12px; padding:11px; font-weight:700; font-size:13px;
+  }
+  .bill-exact-btn:active{transform:scale(0.98);}
+  .pay-custom-input{
+    width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--border);
+    background:var(--bg); color:var(--text); font-size:17px; font-family:var(--mono); font-weight:700;
+  }
+  .pay-custom-input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .change-box{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--success-tint); border-radius:14px; padding:14px 16px; margin-top:16px;
+    font-weight:800; font-size:14.5px; color:var(--success);
+  }
+  .change-box.insufficient{background:var(--danger-tint); color:var(--danger);}
+  .change-box .change-value{font-family:var(--mono); font-size:20px; font-weight:800;}
+
   .toast{
     position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
     background:var(--text); color:var(--bg); padding:10px 18px; border-radius:30px;
@@ -399,7 +450,10 @@
   <div class="panel" id="menuPanel" style="display:none; margin-top:14px;">
     <div class="form-row">
       <input type="text" id="itemName" placeholder="Item name (e.g. Adobo)" maxlength="30">
-      <input type="number" id="itemPrice" class="price-input" placeholder="₱ Price" min="0" step="0.5" inputmode="decimal">
+      <input type="number" id="itemPrice" class="price-input" placeholder="₱ Full price" min="0" step="0.5" inputmode="decimal">
+    </div>
+    <div class="form-row">
+      <input type="number" id="itemHalfPrice" class="price-input" style="max-width:none;" placeholder="₱ Half price (optional)" min="0" step="0.5" inputmode="decimal">
     </div>
     <button class="btn-primary" id="btnAddItem">+ Add Item</button>
     <ul class="menu-list" id="menuList"></ul>
@@ -521,6 +575,53 @@
   </div>
 </div>
 
+<!-- Full/Half price variant chooser -->
+<div class="overlay" id="variantOverlay">
+  <div class="sheet">
+    <h3 id="variantSheetTitle">Choose price</h3>
+    <p id="variantSheetSubtitle">Which price for this order?</p>
+    <div class="variant-options" id="variantOptions"></div>
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelVariant">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment / change calculator -->
+<div class="overlay" id="paymentOverlay">
+  <div class="sheet">
+    <h3 id="paymentSheetTitle">Payment — Order</h3>
+    <div class="pay-total-row">
+      <span>Total Due</span>
+      <span class="pay-total-value" id="paymentTotalValue">₱0</span>
+    </div>
+
+    <div class="pay-label">Cash received</div>
+    <div class="bill-grid" id="billGrid">
+      <button class="bill-btn" data-bill="1000">₱1000</button>
+      <button class="bill-btn" data-bill="500">₱500</button>
+      <button class="bill-btn" data-bill="200">₱200</button>
+      <button class="bill-btn" data-bill="100">₱100</button>
+      <button class="bill-btn" data-bill="50">₱50</button>
+      <button class="bill-btn" data-bill="20">₱20</button>
+    </div>
+    <button class="bill-exact-btn" id="btnExactAmount">Exact amount (no change)</button>
+
+    <div class="pay-label">Or enter amount</div>
+    <input type="number" id="paymentCustomAmount" class="pay-custom-input" placeholder="₱ Amount received" min="0" step="1" inputmode="decimal">
+
+    <div class="change-box" id="changeBox">
+      <span class="change-label" id="changeLabel">Change</span>
+      <span class="change-value" id="changeValue">₱0</span>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-outline" id="cancelPayment">Cancel</button>
+      <button class="btn-primary" id="confirmPayment" disabled>Confirm Payment</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -574,16 +675,37 @@
   }
 
   // ---------- Draft (order builder) ----------
+  // draft[itemId] = { full: number, half: number }
+  function ensureDraftSlot(itemId){
+    if (!draft[itemId] || typeof draft[itemId] !== "object"){
+      draft[itemId] = { full: 0, half: 0 };
+    }
+    return draft[itemId];
+  }
   function draftTotal(){
-    return menu.reduce((sum, item) => sum + (draft[item.id] || 0) * item.price, 0);
+    return menu.reduce((sum, item) => {
+      const d = ensureDraftSlot(item.id);
+      return sum + d.full * item.price + d.half * (item.halfPrice || 0);
+    }, 0);
   }
   function draftCount(){
-    return menu.reduce((sum, item) => sum + (draft[item.id] || 0), 0);
+    return menu.reduce((sum, item) => {
+      const d = ensureDraftSlot(item.id);
+      return sum + d.full + d.half;
+    }, 0);
   }
   function draftItemsList(){
-    return menu
-      .filter(item => (draft[item.id] || 0) > 0)
-      .map(item => ({ itemId: item.id, name: item.name, price: item.price, qty: draft[item.id] }));
+    const rows = [];
+    menu.forEach(item => {
+      const d = ensureDraftSlot(item.id);
+      if (d.full > 0){
+        rows.push({ itemId: item.id, name: item.name, price: item.price, qty: d.full, variant: "full" });
+      }
+      if (item.halfPrice && d.half > 0){
+        rows.push({ itemId: item.id, name: item.name + " (Half)", price: item.halfPrice, qty: d.half, variant: "half" });
+      }
+    });
+    return rows;
   }
 
   // ---------- Paid totals ----------
@@ -643,7 +765,7 @@
       <li>
         <div>
           <span class="mi-name">${escapeHtml(item.name)}</span>
-          <span class="mi-price">${peso(item.price)}</span>
+          <span class="mi-price">${peso(item.price)}${item.halfPrice ? ` · Half ${peso(item.halfPrice)}` : ""}</span>
         </div>
         <div class="mi-actions">
           <button class="mini-btn" data-edit="${item.id}" title="Edit">✏️</button>
@@ -660,14 +782,23 @@
       return;
     }
     wrap.innerHTML = `<div class="cards">` + menu.map(item => {
-      const q = draft[item.id] || 0;
-      const subtotal = q * item.price;
+      const d = ensureDraftSlot(item.id);
+      const hasHalf = !!item.halfPrice;
+      const subtotal = d.full * item.price + d.half * (item.halfPrice || 0);
+      const totalQty = d.full + d.half;
+      const priceLine = hasHalf
+        ? `${peso(item.price)} full · ${peso(item.halfPrice)} half`
+        : `${peso(item.price)} / serving`;
+      const breakdownLine = hasHalf
+        ? `<div class="card-variant-line">Full: <b>${d.full}</b> &nbsp;·&nbsp; Half: <b>${d.half}</b></div>`
+        : "";
       return `
         <div class="card">
           <div class="card-top">
             <div>
               <div class="card-name">${escapeHtml(item.name)}</div>
-              <div class="card-price">${peso(item.price)} / serving</div>
+              <div class="card-price">${priceLine}</div>
+              ${breakdownLine}
             </div>
             <div class="card-subtotal">
               <div class="st-label">Subtotal</div>
@@ -676,13 +807,65 @@
           </div>
           <div class="counter-row">
             <button class="qty-btn minus" data-minus="${item.id}" aria-label="Decrease">−</button>
-            <div class="qty-value">${q}</div>
+            <div class="qty-value">${totalQty}</div>
             <button class="qty-btn plus" data-plus="${item.id}" aria-label="Increase">+</button>
           </div>
         </div>
       `;
     }).join("") + `</div>`;
   }
+
+  // ---------- Full/Half variant chooser ----------
+  let variantContext = null; // { itemId, mode: 'add' | 'remove' }
+
+  function openVariantChooser(itemId, mode){
+    const item = menu.find(m => m.id === itemId);
+    if (!item) return;
+    const d = ensureDraftSlot(itemId);
+    variantContext = { itemId, mode };
+
+    document.getElementById("variantSheetTitle").textContent =
+      (mode === "add" ? "Add to order — " : "Remove from order — ") + item.name;
+    document.getElementById("variantSheetSubtitle").textContent =
+      mode === "add" ? "Which price for this order?" : "Which one are you removing?";
+
+    const opts = document.getElementById("variantOptions");
+    let html = "";
+    if (mode === "add"){
+      html += `<button class="variant-opt" data-variant-choice="full">Full <span class="vo-price">${peso(item.price)}</span></button>`;
+      if (item.halfPrice){
+        html += `<button class="variant-opt" data-variant-choice="half">Half <span class="vo-price">${peso(item.halfPrice)}</span></button>`;
+      }
+    } else {
+      if (d.full > 0){
+        html += `<button class="variant-opt remove" data-variant-choice="full">Full <span class="vo-price">− 1 (have ${d.full})</span></button>`;
+      }
+      if (item.halfPrice && d.half > 0){
+        html += `<button class="variant-opt remove" data-variant-choice="half">Half <span class="vo-price">− 1 (have ${d.half})</span></button>`;
+      }
+    }
+    opts.innerHTML = html;
+    document.getElementById("variantOverlay").classList.add("show");
+  }
+
+  document.getElementById("variantOptions").addEventListener("click", (e) => {
+    const choice = e.target.closest("[data-variant-choice]")?.dataset.variantChoice;
+    if (!choice || !variantContext) return;
+    const d = ensureDraftSlot(variantContext.itemId);
+    if (variantContext.mode === "add"){
+      d[choice] += 1;
+    } else {
+      d[choice] = Math.max(0, d[choice] - 1);
+    }
+    document.getElementById("variantOverlay").classList.remove("show");
+    variantContext = null;
+    save(); renderCards(); renderTotals();
+  });
+
+  document.getElementById("cancelVariant").addEventListener("click", () => {
+    document.getElementById("variantOverlay").classList.remove("show");
+    variantContext = null;
+  });
 
   function slipItemsSummary(items){
     if (!items.length) return "No items";
@@ -737,6 +920,8 @@
         </div>
         <ul class="slip-items">
           ${order.items.map(it => `<li><span class="sn">${escapeHtml(it.name)}</span><span class="sq">${it.qty} × ${peso(it.price)}</span></li>`).join("")}
+          ${order.amountPaid != null ? `<li><span class="sn">Cash received</span><span class="sq">${peso(order.amountPaid)}</span></li>
+          <li><span class="sn">Change given</span><span class="sq">${peso(order.change)}</span></li>` : ""}
         </ul>
       </div>
     `).join("");
@@ -803,25 +988,30 @@
   // ---------- Add / edit menu item ----------
   const nameInput = document.getElementById("itemName");
   const priceInput = document.getElementById("itemPrice");
+  const halfPriceInput = document.getElementById("itemHalfPrice");
   const addBtn = document.getElementById("btnAddItem");
 
   addBtn.addEventListener("click", () => {
     const name = nameInput.value.trim();
     const price = parseFloat(priceInput.value);
+    const halfRaw = halfPriceInput.value.trim();
+    const halfPrice = halfRaw === "" ? null : parseFloat(halfRaw);
+
     if (!name){ toast("Enter an item name"); nameInput.focus(); return; }
-    if (isNaN(price) || price < 0){ toast("Enter a valid price"); priceInput.focus(); return; }
+    if (isNaN(price) || price < 0){ toast("Enter a valid full price"); priceInput.focus(); return; }
+    if (halfRaw !== "" && (isNaN(halfPrice) || halfPrice < 0)){ toast("Enter a valid half price, or leave it blank"); halfPriceInput.focus(); return; }
 
     if (editingId){
       const item = menu.find(m => m.id === editingId);
-      if (item){ item.name = name; item.price = price; }
+      if (item){ item.name = name; item.price = price; item.halfPrice = halfPrice; }
       editingId = null;
       addBtn.textContent = "+ Add Item";
     } else {
       const id = cryptoId();
-      menu.push({ id, name, price });
-      draft[id] = 0;
+      menu.push({ id, name, price, halfPrice });
+      draft[id] = { full: 0, half: 0 };
     }
-    nameInput.value = ""; priceInput.value = "";
+    nameInput.value = ""; priceInput.value = ""; halfPriceInput.value = "";
     save(); renderAll();
     nameInput.focus();
   });
@@ -834,6 +1024,7 @@
       if (!item) return;
       nameInput.value = item.name;
       priceInput.value = item.price;
+      halfPriceInput.value = item.halfPrice != null ? item.halfPrice : "";
       editingId = editId;
       addBtn.textContent = "✓ Save Changes";
       nameInput.focus();
@@ -855,7 +1046,7 @@
       menu = menu.filter(m => m.id !== pendingDeleteId);
       delete draft[pendingDeleteId];
       if (editingId === pendingDeleteId){
-        editingId = null; nameInput.value=""; priceInput.value=""; addBtn.textContent = "+ Add Item";
+        editingId = null; nameInput.value=""; priceInput.value=""; halfPriceInput.value=""; addBtn.textContent = "+ Add Item";
       }
       save(); renderAll();
       toast("Item removed");
@@ -876,7 +1067,7 @@
     menu = [];
     draft = {};
     editingId = null;
-    nameInput.value = ""; priceInput.value = ""; addBtn.textContent = "+ Add Item";
+    nameInput.value = ""; priceInput.value = ""; halfPriceInput.value = ""; addBtn.textContent = "+ Add Item";
     save(); renderAll();
     document.getElementById("clearMenuOverlay").classList.remove("show");
     toast("Menu cleared");
@@ -886,18 +1077,35 @@
   document.getElementById("cardsWrap").addEventListener("click", (e) => {
     const plusId = e.target.closest("[data-plus]")?.dataset.plus;
     const minusId = e.target.closest("[data-minus]")?.dataset.minus;
+
     if (plusId){
-      draft[plusId] = (draft[plusId] || 0) + 1;
-      save(); renderCards(); renderTotals();
+      const item = menu.find(m => m.id === plusId);
+      if (item && item.halfPrice){
+        openVariantChooser(plusId, "add");
+      } else {
+        const d = ensureDraftSlot(plusId);
+        d.full += 1;
+        save(); renderCards(); renderTotals();
+      }
     }
+
     if (minusId){
-      draft[minusId] = Math.max(0, (draft[minusId] || 0) - 1);
-      save(); renderCards(); renderTotals();
+      const item = menu.find(m => m.id === minusId);
+      const d = ensureDraftSlot(minusId);
+      if (item && item.halfPrice && d.full > 0 && d.half > 0){
+        openVariantChooser(minusId, "remove");
+      } else if (d.full > 0){
+        d.full -= 1;
+        save(); renderCards(); renderTotals();
+      } else if (d.half > 0){
+        d.half -= 1;
+        save(); renderCards(); renderTotals();
+      }
     }
   });
 
   function resetDraft(){
-    menu.forEach(item => draft[item.id] = 0);
+    menu.forEach(item => draft[item.id] = { full: 0, half: 0 });
   }
 
   document.getElementById("btnClearDraft").addEventListener("click", () => {
@@ -958,7 +1166,10 @@
       const slip = openSlips.find(s => s.id === editSlipId);
       if (!slip) return;
       resetDraft();
-      slip.items.forEach(it => { draft[it.itemId] = it.qty; });
+      slip.items.forEach(it => {
+        const d = ensureDraftSlot(it.itemId);
+        d[it.variant || "full"] = it.qty;
+      });
       editingSlipId = slip.id;
       document.getElementById("editBanner").classList.add("show");
       document.getElementById("editBannerText").textContent = `Editing Order #${slip.number}`;
@@ -968,20 +1179,7 @@
     }
 
     if (paidSlipId){
-      const idx = openSlips.findIndex(s => s.id === paidSlipId);
-      if (idx === -1) return;
-      const slip = openSlips[idx];
-      openSlips.splice(idx, 1);
-      paidOrders.push({
-        id: slip.id,
-        number: slip.number,
-        items: slip.items,
-        total: slip.total,
-        paidAt: new Date().toISOString()
-      });
-      if (editingSlipId === paidSlipId){ resetDraft(); exitEditMode(); }
-      save(); renderOpenSlips(); renderPaidSlips(); renderMasterlist(); renderTotals(); renderCards();
-      toast(`Order #${slip.number} marked paid ✓`);
+      openPaymentModal(paidSlipId);
     }
 
     if (cancelSlipId){
@@ -1007,6 +1205,116 @@
     }
     document.getElementById("cancelSlipOverlay").classList.remove("show");
     pendingCancelSlipId = null;
+  });
+
+  // ---------- Payment / change calculator ----------
+  let pendingPaySlipId = null;
+  let selectedBill = null;
+
+  function openPaymentModal(slipId){
+    const slip = openSlips.find(s => s.id === slipId);
+    if (!slip) return;
+    pendingPaySlipId = slipId;
+    selectedBill = null;
+
+    document.getElementById("paymentSheetTitle").textContent = `Payment — Order #${slip.number}`;
+    document.getElementById("paymentTotalValue").textContent = peso(slip.total);
+    document.getElementById("paymentCustomAmount").value = "";
+    document.querySelectorAll(".bill-btn").forEach(b => b.classList.remove("selected"));
+    updateChangeDisplay();
+    document.getElementById("paymentOverlay").classList.add("show");
+    setTimeout(() => document.getElementById("paymentCustomAmount").focus(), 150);
+  }
+
+  function currentSlipTotalForPayment(){
+    const slip = openSlips.find(s => s.id === pendingPaySlipId);
+    return slip ? slip.total : 0;
+  }
+
+  function updateChangeDisplay(){
+    const total = currentSlipTotalForPayment();
+    const amount = parseFloat(document.getElementById("paymentCustomAmount").value);
+    const box = document.getElementById("changeBox");
+    const label = document.getElementById("changeLabel");
+    const value = document.getElementById("changeValue");
+    const confirmBtn = document.getElementById("confirmPayment");
+
+    if (isNaN(amount) || amount <= 0){
+      box.classList.remove("insufficient");
+      label.textContent = "Change";
+      value.textContent = peso(0);
+      confirmBtn.disabled = true;
+      return;
+    }
+    const change = amount - total;
+    if (change < 0){
+      box.classList.add("insufficient");
+      label.textContent = `Short by`;
+      value.textContent = peso(Math.abs(change));
+      confirmBtn.disabled = true;
+    } else {
+      box.classList.remove("insufficient");
+      label.textContent = "Change";
+      value.textContent = peso(change);
+      confirmBtn.disabled = false;
+    }
+  }
+
+  document.getElementById("billGrid").addEventListener("click", (e) => {
+    const bill = e.target.closest("[data-bill]")?.dataset.bill;
+    if (!bill) return;
+    selectedBill = parseFloat(bill);
+    document.getElementById("paymentCustomAmount").value = selectedBill;
+    document.querySelectorAll(".bill-btn").forEach(b => b.classList.toggle("selected", b.dataset.bill === bill));
+    updateChangeDisplay();
+  });
+
+  document.getElementById("btnExactAmount").addEventListener("click", () => {
+    const total = currentSlipTotalForPayment();
+    document.getElementById("paymentCustomAmount").value = total;
+    document.querySelectorAll(".bill-btn").forEach(b => {
+      b.classList.toggle("selected", parseFloat(b.dataset.bill) === total);
+    });
+    updateChangeDisplay();
+  });
+
+  document.getElementById("paymentCustomAmount").addEventListener("input", () => {
+    document.querySelectorAll(".bill-btn").forEach(b => {
+      b.classList.toggle("selected", parseFloat(b.dataset.bill) === parseFloat(document.getElementById("paymentCustomAmount").value));
+    });
+    updateChangeDisplay();
+  });
+
+  document.getElementById("cancelPayment").addEventListener("click", () => {
+    document.getElementById("paymentOverlay").classList.remove("show");
+    pendingPaySlipId = null;
+  });
+
+  document.getElementById("confirmPayment").addEventListener("click", () => {
+    if (!pendingPaySlipId) return;
+    const idx = openSlips.findIndex(s => s.id === pendingPaySlipId);
+    if (idx === -1) return;
+    const slip = openSlips[idx];
+    const amountPaid = parseFloat(document.getElementById("paymentCustomAmount").value);
+    if (isNaN(amountPaid) || amountPaid < slip.total) return; // safety guard, button should already be disabled
+
+    const change = amountPaid - slip.total;
+    openSlips.splice(idx, 1);
+    paidOrders.push({
+      id: slip.id,
+      number: slip.number,
+      items: slip.items,
+      total: slip.total,
+      amountPaid,
+      change,
+      paidAt: new Date().toISOString()
+    });
+    if (editingSlipId === pendingPaySlipId){ resetDraft(); exitEditMode(); }
+
+    document.getElementById("paymentOverlay").classList.remove("show");
+    pendingPaySlipId = null;
+    save(); renderOpenSlips(); renderPaidSlips(); renderMasterlist(); renderTotals(); renderCards();
+    toast(`Order #${slip.number} paid — Change ${peso(change)}`);
   });
 
   // ---------- Reset day ----------
@@ -1102,9 +1410,11 @@
     lines.push("");
     lines.push(`TOTAL SALES (PAID), , , ${total.toFixed(2)}`);
     lines.push("");
-    lines.push("Order #, Time Paid, Items, Order Total");
+    lines.push("Order #, Time Paid, Items, Order Total, Cash Received, Change Given");
     paidOrders.forEach(o => {
-      lines.push(`${o.number}, ${formatTime(o.paidAt)}, "${slipItemsSummary(o.items)}", ${o.total.toFixed(2)}`);
+      const cash = o.amountPaid != null ? o.amountPaid.toFixed(2) : "";
+      const change = o.change != null ? o.change.toFixed(2) : "";
+      lines.push(`${o.number}, ${formatTime(o.paidAt)}, "${slipItemsSummary(o.items)}", ${o.total.toFixed(2)}, ${cash}, ${change}`);
     });
     if (openSlips.length){
       lines.push("");
@@ -1142,7 +1452,7 @@
   });
 
   // ---------- Init ----------
-  menu.forEach(item => { if (!(item.id in draft)) draft[item.id] = 0; });
+  menu.forEach(item => ensureDraftSlot(item.id));
   save();
   renderAll();
 
